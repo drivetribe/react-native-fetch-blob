@@ -1,6 +1,6 @@
 {
   "name": "@drivetribe/react-native-fetch-blob",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A module provides upload, download, and files access API. Supports file stream read/write for process large files.",
   "main": "index.js",
   "scripts": {
