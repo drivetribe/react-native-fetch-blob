@@ -4,13 +4,13 @@
 
 // import type {RNFetchBlobConfig, RNFetchBlobNative, RNFetchBlobStream} from './types'
 
-import {NativeModules, Platform} from 'react-native'
-import RNFetchBlobSession from './class/RNFetchBlobSession'
-import RNFetchBlobWriteStream from './class/RNFetchBlobWriteStream'
-import RNFetchBlobReadStream from './class/RNFetchBlobReadStream'
-import RNFetchBlobFile from './class/RNFetchBlobFile'
+import { NativeModules, Platform } from 'react-native';
+import RNFetchBlobSession from './class/RNFetchBlobSession';
+import RNFetchBlobWriteStream from './class/RNFetchBlobWriteStream';
+import RNFetchBlobReadStream from './class/RNFetchBlobReadStream';
+import RNFetchBlobFile from './class/RNFetchBlobFile';
 
-const RNFetchBlob: RNFetchBlobNative = NativeModules.RNFetchBlob
+const RNFetchBlob: RNFetchBlobNative = NativeModules.RNFetchBlob;
 
 const dirs = {
   DocumentDir: RNFetchBlob.DocumentDir,
@@ -20,15 +20,28 @@ const dirs = {
   MovieDir: RNFetchBlob.MovieDir,
   DownloadDir: RNFetchBlob.DownloadDir,
   DCIMDir: RNFetchBlob.DCIMDir,
-  SDCardDir: RNFetchBlob.SDCardDir,
-  SDCardApplicationDir: RNFetchBlob.SDCardApplicationDir,
+  get SDCardDir() {
+    console.warn(
+      'SDCardDir as a constant is deprecated and will be removed in feature release. ' +
+        'Use RNFetchBlob.android.getSDCardDir():Promise instead.'
+    );
+    return RNFetchBlob.SDCardDir;
+  },
+  get SDCardApplicationDir() {
+    console.warn(
+      'SDCardApplicationDir as a constant is deprecated and will be removed in feature release. ' +
+        'Use RNFetchBlob.android.getSDCardApplicationDir():Promise instead. ' +
+        'This variable can be empty on error in native code.'
+    );
+    return RNFetchBlob.SDCardApplicationDir;
+  },
   MainBundleDir: RNFetchBlob.MainBundleDir,
   LibraryDir: RNFetchBlob.LibraryDir
-}
+};
 
 function addCode(code: string, error: Error): Error {
-  error.code = code
-  return error
+  error.code = code;
+  return error;
 }
 
 /**
@@ -37,32 +50,40 @@ function addCode(code: string, error: Error): Error {
  * @return {RNFetchBlobSession}
  */
 function session(name: string): RNFetchBlobSession {
-  let s = RNFetchBlobSession.getSession(name)
-  if (s)
-    return new RNFetchBlobSession(name)
+  let s = RNFetchBlobSession.getSession(name);
+  if (s) return new RNFetchBlobSession(name);
   else {
-    RNFetchBlobSession.setSession(name, [])
-    return new RNFetchBlobSession(name, [])
+    RNFetchBlobSession.setSession(name, []);
+    return new RNFetchBlobSession(name, []);
   }
 }
 
 function asset(path: string): string {
   if (Platform.OS === 'ios') {
     // path from camera roll
-    if (/^assets-library\:\/\//.test(path))
-      return path
+    if (/^assets-library\:\/\//.test(path)) return path;
   }
-  return 'bundle-assets://' + path
+  return 'bundle-assets://' + path;
 }
 
-function createFile(path: string, data: string, encoding: 'base64' | 'ascii' | 'utf8' = 'utf8'): Promise<string> {
+function createFile(
+  path: string,
+  data: string,
+  encoding: 'base64' | 'ascii' | 'utf8' = 'utf8'
+): Promise<string> {
   if (encoding.toLowerCase() === 'ascii') {
-    return Array.isArray(data) ?
-      RNFetchBlob.createFileASCII(path, data) :
-      Promise.reject(addCode('EINVAL', new TypeError('`data` of ASCII file must be an array with 0..255 numbers')))
-  }
-  else {
-    return RNFetchBlob.createFile(path, data, encoding)
+    return Array.isArray(data)
+      ? RNFetchBlob.createFileASCII(path, data)
+      : Promise.reject(
+          addCode(
+            'EINVAL',
+            new TypeError(
+              '`data` of ASCII file must be an array with 0..255 numbers'
+            )
+          )
+        );
+  } else {
+    return RNFetchBlob.createFile(path, data, encoding);
   }
 }
 
@@ -76,22 +97,27 @@ function createFile(path: string, data: string, encoding: 'base64' | 'ascii' | '
 function writeStream(
   path: string,
   encoding?: 'utf8' | 'ascii' | 'base64' = 'utf8',
-  append?: boolean = false,
+  append?: boolean = false
 ): Promise<RNFetchBlobWriteStream> {
   if (typeof path !== 'string') {
-    return Promise.reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
+    return Promise.reject(
+      addCode('EINVAL', new TypeError('Missing argument "path" '))
+    );
   }
   return new Promise((resolve, reject) => {
-    RNFetchBlob.writeStream(path, encoding, append, (errCode, errMsg, streamId: string) => {
-      if (errMsg) {
-        const err = new Error(errMsg)
-        err.code = errCode
-        reject(err)
+    RNFetchBlob.writeStream(
+      path,
+      encoding,
+      append,
+      (errCode, errMsg, streamId: string) => {
+        if (errMsg) {
+          const err = new Error(errMsg);
+          err.code = errCode;
+          reject(err);
+        } else resolve(new RNFetchBlobWriteStream(streamId, encoding));
       }
-      else
-        resolve(new RNFetchBlobWriteStream(streamId, encoding))
-    })
-  })
+    );
+  });
 }
 
 /**
@@ -109,9 +135,13 @@ function readStream(
   tick?: number = 10
 ): Promise<RNFetchBlobReadStream> {
   if (typeof path !== 'string') {
-    return Promise.reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
+    return Promise.reject(
+      addCode('EINVAL', new TypeError('Missing argument "path" '))
+    );
   }
-  return Promise.resolve(new RNFetchBlobReadStream(path, encoding, bufferSize, tick))
+  return Promise.resolve(
+    new RNFetchBlobReadStream(path, encoding, bufferSize, tick)
+  );
 }
 
 /**
@@ -121,9 +151,11 @@ function readStream(
  */
 function mkdir(path: string): Promise {
   if (typeof path !== 'string') {
-    return Promise.reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
+    return Promise.reject(
+      addCode('EINVAL', new TypeError('Missing argument "path" '))
+    );
   }
-  return RNFetchBlob.mkdir(path)
+  return RNFetchBlob.mkdir(path);
 }
 
 /**
@@ -132,7 +164,7 @@ function mkdir(path: string): Promise {
  * @return {Promise}
  */
 function pathForAppGroup(groupName: string): Promise {
-  return RNFetchBlob.pathForAppGroup(groupName)
+  return RNFetchBlob.pathForAppGroup(groupName);
 }
 
 /**
@@ -143,9 +175,11 @@ function pathForAppGroup(groupName: string): Promise {
  */
 function readFile(path: string, encoding: string = 'utf8'): Promise<any> {
   if (typeof path !== 'string') {
-    return Promise.reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
+    return Promise.reject(
+      addCode('EINVAL', new TypeError('Missing argument "path" '))
+    );
   }
-  return RNFetchBlob.readFile(path, encoding)
+  return RNFetchBlob.readFile(path, encoding);
 }
 
 /**
@@ -155,43 +189,69 @@ function readFile(path: string, encoding: string = 'utf8'): Promise<any> {
  * @param  {string} encoding Encoding of data (Optional).
  * @return {Promise}
  */
-function writeFile(path: string, data: string | Array<number>, encoding: ?string = 'utf8'): Promise {
+function writeFile(
+  path: string,
+  data: string | Array<number>,
+  encoding: ?string = 'utf8'
+): Promise {
   if (typeof path !== 'string') {
-    return Promise.reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
+    return Promise.reject(
+      addCode('EINVAL', new TypeError('Missing argument "path" '))
+    );
   }
   if (encoding.toLocaleLowerCase() === 'ascii') {
     if (!Array.isArray(data)) {
-      return Promise.reject(addCode('EINVAL', new TypeError('"data" must be an Array when encoding is "ascii"')))
-    }
-    else
-      return RNFetchBlob.writeFileArray(path, data, false)
-  }
-  else {
+      return Promise.reject(
+        addCode(
+          'EINVAL',
+          new TypeError('"data" must be an Array when encoding is "ascii"')
+        )
+      );
+    } else return RNFetchBlob.writeFileArray(path, data, false);
+  } else {
     if (typeof data !== 'string') {
-      return Promise.reject(addCode('EINVAL', new TypeError(`"data" must be a String when encoding is "utf8" or "base64", but it is "${typeof data}"`)))
-    }
-    else
-      return RNFetchBlob.writeFile(path, encoding, data, false)
+      return Promise.reject(
+        addCode(
+          'EINVAL',
+          new TypeError(
+            `"data" must be a String when encoding is "utf8" or "base64", but it is "${typeof data}"`
+          )
+        )
+      );
+    } else return RNFetchBlob.writeFile(path, encoding, data, false);
   }
 }
 
-function appendFile(path: string, data: string | Array<number>, encoding?: string = 'utf8'): Promise<number> {
+function appendFile(
+  path: string,
+  data: string | Array<number>,
+  encoding?: string = 'utf8'
+): Promise<number> {
   if (typeof path !== 'string') {
-    return Promise.reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
+    return Promise.reject(
+      addCode('EINVAL', new TypeError('Missing argument "path" '))
+    );
   }
   if (encoding.toLocaleLowerCase() === 'ascii') {
     if (!Array.isArray(data)) {
-      return Promise.reject(addCode('EINVAL', new TypeError('`data` of ASCII file must be an array with 0..255 numbers')))
-    }
-    else
-      return RNFetchBlob.writeFileArray(path, data, true)
-  }
-  else {
+      return Promise.reject(
+        addCode(
+          'EINVAL',
+          new TypeError(
+            '`data` of ASCII file must be an array with 0..255 numbers'
+          )
+        )
+      );
+    } else return RNFetchBlob.writeFileArray(path, data, true);
+  } else {
     if (typeof data !== 'string') {
-      return Promise.reject(addCode('EINVAL'), new TypeError(`"data" must be a String when encoding is "utf8" or "base64", but it is "${typeof data}"`))
-    }
-    else
-      return RNFetchBlob.writeFile(path, encoding, data, true)
+      return Promise.reject(
+        addCode('EINVAL'),
+        new TypeError(
+          `"data" must be a String when encoding is "utf8" or "base64", but it is "${typeof data}"`
+        )
+      );
+    } else return RNFetchBlob.writeFile(path, encoding, data, true);
   }
 }
 
@@ -203,20 +263,21 @@ function appendFile(path: string, data: string | Array<number>, encoding?: strin
 function stat(path: string): Promise<RNFetchBlobFile> {
   return new Promise((resolve, reject) => {
     if (typeof path !== 'string') {
-      return reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
+      return reject(
+        addCode('EINVAL', new TypeError('Missing argument "path" '))
+      );
     }
     RNFetchBlob.stat(path, (err, stat) => {
-      if (err)
-        reject(new Error(err))
+      if (err) reject(new Error(err));
       else {
         if (stat) {
-          stat.size = parseInt(stat.size)
-          stat.lastModified = parseInt(stat.lastModified)
+          stat.size = parseInt(stat.size);
+          stat.lastModified = parseInt(stat.lastModified);
         }
-        resolve(stat)
+        resolve(stat);
       }
-    })
-  })
+    });
+  });
 }
 
 /**
@@ -227,71 +288,82 @@ function stat(path: string): Promise<RNFetchBlobFile> {
 function scanFile(pairs: any): Promise {
   return new Promise((resolve, reject) => {
     if (pairs === undefined) {
-      return reject(addCode('EINVAL', new TypeError('Missing argument')))
+      return reject(addCode('EINVAL', new TypeError('Missing argument')));
     }
-    RNFetchBlob.scanFile(pairs, (err) => {
-      if (err)
-        reject(addCode('EUNSPECIFIED', new Error(err)))
-      else
-        resolve()
-    })
-  })
+    RNFetchBlob.scanFile(pairs, err => {
+      if (err) reject(addCode('EUNSPECIFIED', new Error(err)));
+      else resolve();
+    });
+  });
 }
 
 function hash(path: string, algorithm: string): Promise<string> {
   if (typeof path !== 'string' || typeof algorithm !== 'string') {
-    return Promise.reject(addCode('EINVAL', new TypeError('Missing argument "path" and/or "algorithm"')))
+    return Promise.reject(
+      addCode(
+        'EINVAL',
+        new TypeError('Missing argument "path" and/or "algorithm"')
+      )
+    );
   }
-  return RNFetchBlob.hash(path, algorithm)
+  return RNFetchBlob.hash(path, algorithm);
 }
 
 function cp(path: string, dest: string): Promise<boolean> {
   return new Promise((resolve, reject) => {
     if (typeof path !== 'string' || typeof dest !== 'string') {
-      return reject(addCode('EINVAL', new TypeError('Missing argument "path" and/or "destination"')))
+      return reject(
+        addCode(
+          'EINVAL',
+          new TypeError('Missing argument "path" and/or "destination"')
+        )
+      );
     }
     RNFetchBlob.cp(path, dest, (err, res) => {
-      if (err)
-        reject(addCode('EUNSPECIFIED', new Error(err)))
-      else
-        resolve(res)
-    })
-  })
+      if (err) reject(addCode('EUNSPECIFIED', new Error(err)));
+      else resolve(res);
+    });
+  });
 }
 
 function mv(path: string, dest: string): Promise<boolean> {
   return new Promise((resolve, reject) => {
     if (typeof path !== 'string' || typeof dest !== 'string') {
-      return reject(addCode('EINVAL', new TypeError('Missing argument "path" and/or "destination"')))
+      return reject(
+        addCode(
+          'EINVAL',
+          new TypeError('Missing argument "path" and/or "destination"')
+        )
+      );
     }
     RNFetchBlob.mv(path, dest, (err, res) => {
-      if (err)
-        reject(addCode('EUNSPECIFIED', new Error(err)))
-      else
-        resolve(res)
-    })
-  })
+      if (err) reject(addCode('EUNSPECIFIED', new Error(err)));
+      else resolve(res);
+    });
+  });
 }
 
 function lstat(path: string): Promise<Array<RNFetchBlobFile>> {
   return new Promise((resolve, reject) => {
     if (typeof path !== 'string') {
-      return reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
+      return reject(
+        addCode('EINVAL', new TypeError('Missing argument "path" '))
+      );
     }
     RNFetchBlob.lstat(path, (err, stat) => {
-      if (err)
-        reject(addCode('EUNSPECIFIED', new Error(err)))
-      else
-        resolve(stat)
-    })
-  })
+      if (err) reject(addCode('EUNSPECIFIED', new Error(err)));
+      else resolve(stat);
+    });
+  });
 }
 
 function ls(path: string): Promise<Array<String>> {
   if (typeof path !== 'string') {
-    return Promise.reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
+    return Promise.reject(
+      addCode('EINVAL', new TypeError('Missing argument "path" '))
+    );
   }
-  return RNFetchBlob.ls(path)
+  return RNFetchBlob.ls(path);
 }
 
 /**
@@ -302,16 +374,16 @@ function ls(path: string): Promise<Array<String>> {
 function unlink(path: string): Promise {
   return new Promise((resolve, reject) => {
     if (typeof path !== 'string') {
-      return reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
+      return reject(
+        addCode('EINVAL', new TypeError('Missing argument "path" '))
+      );
     }
-    RNFetchBlob.unlink(path, (err) => {
+    RNFetchBlob.unlink(path, err => {
       if (err) {
-        reject(addCode('EUNSPECIFIED', new Error(err)))
-      }
-      else
-        resolve()
-    })
-  })
+        reject(addCode('EUNSPECIFIED', new Error(err)));
+      } else resolve();
+    });
+  });
 }
 
 /**
@@ -322,71 +394,73 @@ function unlink(path: string): Promise {
 function exists(path: string): Promise<boolean> {
   return new Promise((resolve, reject) => {
     if (typeof path !== 'string') {
-      return reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
+      return reject(
+        addCode('EINVAL', new TypeError('Missing argument "path" '))
+      );
     }
     try {
-      RNFetchBlob.exists(path, (exist) => {
-        resolve(exist)
-      })
-    }catch (err){
-      reject(addCode('EUNSPECIFIED', new Error(err)))
+      RNFetchBlob.exists(path, exist => {
+        resolve(exist);
+      });
+    } catch (err) {
+      reject(addCode('EUNSPECIFIED', new Error(err)));
     }
-  })
-
+  });
 }
 
 function slice(src: string, dest: string, start: number, end: number): Promise {
   if (typeof src !== 'string' || typeof dest !== 'string') {
-    return reject(addCode('EINVAL', new TypeError('Missing argument "src" and/or "destination"')))
+    return reject(
+      addCode(
+        'EINVAL',
+        new TypeError('Missing argument "src" and/or "destination"')
+      )
+    );
   }
 
-  let p = Promise.resolve()
-  let size = 0
+  let p = Promise.resolve();
+  let size = 0;
 
   function normalize(num, size) {
-    if (num < 0)
-      return Math.max(0, size + num)
-    if (!num && num !== 0)
-      return size
-    return num
+    if (num < 0) return Math.max(0, size + num);
+    if (!num && num !== 0) return size;
+    return num;
   }
 
   if (start < 0 || end < 0 || !start || !end) {
-    p = p.then(() => stat(src))
-      .then((stat) => {
-        size = Math.floor(stat.size)
-        start = normalize(start || 0, size)
-        end = normalize(end, size)
-      })
+    p = p.then(() => stat(src)).then(stat => {
+      size = Math.floor(stat.size);
+      start = normalize(start || 0, size);
+      end = normalize(end, size);
+    });
   }
-  return p.then(() => RNFetchBlob.slice(src, dest, start, end))
+  return p.then(() => RNFetchBlob.slice(src, dest, start, end));
 }
 
-function isDir(path: string): Promise<bool> {
+function isDir(path: string): Promise<boolean> {
   return new Promise((resolve, reject) => {
     if (typeof path !== 'string') {
-      return reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
+      return reject(
+        addCode('EINVAL', new TypeError('Missing argument "path" '))
+      );
     }
     try {
       RNFetchBlob.exists(path, (exist, isDir) => {
-        resolve(isDir)
-      })
-    }catch (err){
-      reject(addCode('EUNSPECIFIED', new Error(err)))
+        resolve(isDir);
+      });
+    } catch (err) {
+      reject(addCode('EUNSPECIFIED', new Error(err)));
     }
-  })
-
+  });
 }
 
 function df(): Promise<{ free: number, total: number }> {
   return new Promise((resolve, reject) => {
     RNFetchBlob.df((err, stat) => {
-      if (err)
-        reject(addCode('EUNSPECIFIED', new Error(err)))
-      else
-        resolve(stat)
-    })
-  })
+      if (err) reject(addCode('EUNSPECIFIED', new Error(err)));
+      else resolve(stat);
+    });
+  });
 }
 
 export default {
@@ -414,4 +488,4 @@ export default {
   slice,
   asset,
   df
-}
+};

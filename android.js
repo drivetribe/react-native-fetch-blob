@@ -6,10 +6,10 @@ import {
   NativeModules,
   DeviceEventEmitter,
   Platform,
-  NativeAppEventEmitter,
-} from 'react-native'
+  NativeAppEventEmitter
+} from 'react-native';
 
-const RNFetchBlob:RNFetchBlobNative = NativeModules.RNFetchBlob
+const RNFetchBlob: RNFetchBlobNative = NativeModules.RNFetchBlob;
 
 /**
  * Send an intent to open the file.
@@ -17,30 +17,51 @@ const RNFetchBlob:RNFetchBlobNative = NativeModules.RNFetchBlob
  * @param  {string} mime MIME type string
  * @return {Promise}
  */
-function actionViewIntent(path:string, mime:string = 'text/plain') {
-  if(Platform.OS === 'android')
-    return RNFetchBlob.actionViewIntent(path, mime)
+function actionViewIntent(path: string, mime: string = 'text/plain') {
+  if (Platform.OS === 'android')
+    return RNFetchBlob.actionViewIntent(path, mime);
   else
-    return Promise.reject('RNFetchBlob.android.actionViewIntent only supports Android.')
+    return Promise.reject(
+      'RNFetchBlob.android.actionViewIntent only supports Android.'
+    );
 }
 
-function getContentIntent(mime:string) {
-  if(Platform.OS === 'android')
-    return RNFetchBlob.getContentIntent(mime)
+function getContentIntent(mime: string) {
+  if (Platform.OS === 'android') return RNFetchBlob.getContentIntent(mime);
   else
-    return Promise.reject('RNFetchBlob.android.getContentIntent only supports Android.')
+    return Promise.reject(
+      'RNFetchBlob.android.getContentIntent only supports Android.'
+    );
 }
 
 function addCompleteDownload(config) {
-  if(Platform.OS === 'android')
-    return RNFetchBlob.addCompleteDownload(config)
+  if (Platform.OS === 'android') return RNFetchBlob.addCompleteDownload(config);
   else
-    return Promise.reject('RNFetchBlob.android.addCompleteDownload only supports Android.')
+    return Promise.reject(
+      'RNFetchBlob.android.addCompleteDownload only supports Android.'
+    );
 }
 
+function getSDCardDir() {
+  if (Platform.OS === 'android') return RNFetchBlob.getSDCardDir();
+  else
+    return Promise.reject(
+      'RNFetchBlob.android.getSDCardDir only supports Android.'
+    );
+}
+
+function getSDCardApplicationDir() {
+  if (Platform.OS === 'android') return RNFetchBlob.getSDCardApplicationDir();
+  else
+    return Promise.reject(
+      'RNFetchBlob.android.getSDCardApplicationDir only supports Android.'
+    );
+}
 
 export default {
   actionViewIntent,
   getContentIntent,
-  addCompleteDownload
-}
+  addCompleteDownload,
+  getSDCardDir,
+  getSDCardApplicationDir
+};
